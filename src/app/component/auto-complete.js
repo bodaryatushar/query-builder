@@ -1,8 +1,9 @@
 import React, { useEffect } from "react";
-import { TextField, CircularProgress } from "@material-ui/core";
+import { TextField } from "@material-ui/core";
 import { makeStyles } from "@material-ui/styles";
-
 import Autocomplete from "@material-ui/lab/Autocomplete";
+
+import { useDebounce } from '../util'
 
 const useStyles = makeStyles((theme) => ({
   listbox: {
@@ -16,7 +17,6 @@ export default function AutoComplete(props) {
     props.isMulti ? [] : null
   );
   const [inputValue, setInputValue] = React.useState("");
-  const loading = open && options.length === 0;
   const {
     value,
     onChange,
@@ -43,39 +43,31 @@ export default function AutoComplete(props) {
     [flatOptions, optionValueKey]
   );
 
+  async function onInputChange(value = '') {
+    setInputValue(value)
+  }
+
+  const delayChange = useDebounce(onInputChange, 400);
+
   useEffect(() => {
     let active = true;
-
-    if (!loading) {
-      return undefined;
-    }
-
-     fetchAPI
-      ? (async () => {
-          const data = await fetchAPI({ search: "" });
-
-          if (active) {
-            setOptions(data);
-          }
-        })()
-      : setOptions(flatOptions);
+      if(open) {
+        fetchAPI
+         ? (async () => {
+             const data = await fetchAPI({ search: inputValue });
+   
+             if (active) {
+               setOptions(data);
+             }
+           })()
+         : setOptions(flatOptions);
+      }
+    
 
     return () => {
       active = false;
     };
-  }, [loading, fetchAPI, flatOptions]);
-
-  useEffect(() => {
-    function onResize() {
-      setOpen(false);
-    }
-    if (!open) {
-      setOptions([]);
-    } else {
-      window.addEventListener("resize", onResize, true);
-      return () => window.removeEventListener("scroll", onResize);
-    }
-  }, [open]);
+  }, [fetchAPI, flatOptions,inputValue,open]);
 
   useEffect(() => {
     if (typeof value === "string") {
@@ -108,6 +100,9 @@ export default function AutoComplete(props) {
 
   return (
     <Autocomplete
+    getOptionSelected={(option, value) =>
+      option[optionValueKey] === value[optionValueKey]
+    }
       getOptionLabel={(option) => {
         return (option && option[optionLabelKey]) || "";
       }}
@@ -117,11 +112,10 @@ export default function AutoComplete(props) {
       onClose={() => setOpen(false)}
       value={selectedValue}
       onChange={(event, newValue) => handleChange(newValue)}
-      options={options}
-      loading={loading}
+      options={options || []}
       multiple={isMulti}
       filterSelectedOptions={filterSelectedOptions}
-      onInputChange={(e, value) => setInputValue(value)}
+      onInputChange={(e, value) => delayChange(value) }
       classes={{ option: "menu-item", listbox: classes.listbox }}
       renderInput={(params) => {
         return (
@@ -136,9 +130,6 @@ export default function AutoComplete(props) {
               ...params.InputProps,
               endAdornment: (
                 <React.Fragment>
-                  {loading ? (
-                    <CircularProgress color="inherit" size={20} />
-                  ) : null}
                   {params.InputProps.endAdornment}
                 </React.Fragment>
               ),
