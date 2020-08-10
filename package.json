@@ -28,6 +28,18 @@
   "eslintConfig": {
     "extends": "react-app"
   },
+  "proxy": "https://test.axelor.com",
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "{public,src}/**/*.{js,jsx,ts,tsx,json,css,scss,md,html}": [
+      "prettier --write",
+      "git add"
+    ]
+  },
   "browserslist": {
     "production": [
       ">0.2%",
@@ -41,6 +53,8 @@
     ]
   },
   "devDependencies": {
-    "prettier": "2.0.5"
+    "husky": "^4.2.5",
+    "prettier": "2.0.5",
+    "lint-staged": "^10.2.11"
   }
 }
