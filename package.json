@@ -28,7 +28,6 @@
   "eslintConfig": {
     "extends": "react-app"
   },
-  "proxy": "https://test.axelor.com",
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged"
