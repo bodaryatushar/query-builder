@@ -3,10 +3,10 @@ import Button from "@material-ui/core/Button";
 import IconButton from "@material-ui/core/IconButton";
 import { makeStyles } from "@material-ui/core/styles";
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(theme => ({
   button: {
-    margin: theme.spacing(1),
-  },
+    margin: theme.spacing(1)
+  }
 }));
 
 function ButtonComp({ title, Icon, onClick }) {
@@ -18,6 +18,15 @@ function ButtonComp({ title, Icon, onClick }) {
       </IconButton>
     );
   }
+
+  if (!Icon) {
+    return (
+      <Button variant="contained" color="secondary" className={classes.button} onClick={onClick} >
+        {title}
+      </Button>
+    );
+  }
+
   return (
     <Button
       variant="contained"
