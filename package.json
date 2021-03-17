@@ -1,4 +1,5 @@
 {
+  "homepage": "http://bodaryatushar.github.io/query-builder",
   "name": "query-builder",
   "version": "0.1.0",
   "private": true,
@@ -20,6 +21,8 @@
     "react-scripts": "3.4.1"
   },
   "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
@@ -52,8 +55,9 @@
     ]
   },
   "devDependencies": {
+    "gh-pages": "^3.1.0",
     "husky": "^4.2.5",
-    "prettier": "2.0.5",
-    "lint-staged": "^10.2.11"
+    "lint-staged": "^10.2.11",
+    "prettier": "2.0.5"
   }
 }
