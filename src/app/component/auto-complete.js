@@ -50,7 +50,7 @@ export default function AutoComplete(props) {
       return undefined;
     }
 
-    fetchAPI
+     fetchAPI
       ? (async () => {
           const data = await fetchAPI({ search: "" });
 
@@ -108,9 +108,6 @@ export default function AutoComplete(props) {
 
   return (
     <Autocomplete
-      getOptionSelected={(option, value) =>
-        option[optionValueKey] === value[optionValueKey]
-      }
       getOptionLabel={(option) => {
         return (option && option[optionLabelKey]) || "";
       }}
