@@ -146,7 +146,7 @@ function RenderWidget({
     time: "LT",
     datetime: "DD/MM/YYYY h:mm a",
   };
-
+  let options = [];
   switch (type) {
     case "one_to_one":
     case "many_to_one":
@@ -188,6 +188,24 @@ function RenderWidget({
     case "integer":
     case "long":
     case "decimal":
+        options = rest.field.selectionList && rest.field.selectionList.map(
+          ({ title, value, data }) => ({
+            name: (data && data.value) || value,
+            title: title,
+          })
+        );
+      if(options) {
+        return <RenderSimpleWidget 
+        Component={Select}
+        operator={operator}
+        editor={editor}
+        internalProps={{
+          options,
+          classes,
+          ...props,
+        }}
+        />
+      }
       return (
         <RenderSimpleWidget
           Component={NumberField}
@@ -203,7 +221,7 @@ function RenderWidget({
         />
       );
     case "enum":
-      const options = rest.field.selectionList.map(
+       options = rest.field.selectionList.map(
         ({ title, value, data }) => ({
           name: (data && data.value) || value,
           title: title,
@@ -222,6 +240,24 @@ function RenderWidget({
         />
       );
     default:
+        options = rest.field.selectionList && rest.field.selectionList.map(
+          ({ title, value, data }) => ({
+            name: (data && data.value) || value,
+            title: title,
+          })
+        );
+      if(options) {
+        return <RenderSimpleWidget 
+        Component={Select}
+        operator={operator}
+        editor={editor}
+        internalProps={{
+          options,
+          classes,
+          ...props,
+        }}
+        />
+      }
       return (
         <RenderSimpleWidget
           Component={InputField}
@@ -262,7 +298,6 @@ function Rule(props) {
     (operators_by_type[type] || []).includes(item.name)
   );
 
-  const renderValue = !["isNull", "isNotNull"].includes(operator);
   return (
     <div className={classes.rules}>
       <Selection
@@ -291,7 +326,7 @@ function Rule(props) {
         }}
         value={operator}
       />
-      {renderValue && (
+      {operator && (
         <RenderWidget
           type={type}
           operator={operator}
