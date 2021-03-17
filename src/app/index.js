@@ -1,33 +1,32 @@
-import React from "react";
-import { makeStyles } from "@material-ui/core/styles";
-import { Paper, InputLabel } from "@material-ui/core";
-import Typography from "@material-ui/core/Typography";
-import Toolbar from "@material-ui/core/Toolbar";
-import AppBar from "@material-ui/core/AppBar";
-import classNames from 'classnames'
-import produce from "immer";
-import Editor from "./editor";
-import { Select, Selection, Button } from "./component";
-import { getMetaModals, getMetaFields } from "./services/api";
-import { queryType, map_operator } from "./data";
+import React from 'react';
+import { makeStyles } from '@material-ui/core/styles';
+import { Paper, InputLabel } from '@material-ui/core';
+import Typography from '@material-ui/core/Typography';
+import Toolbar from '@material-ui/core/Toolbar';
+import AppBar from '@material-ui/core/AppBar';
+import produce from 'immer';
+import Editor from './editor';
+import { Selection, Button, InputField } from './component';
+import { getMetaModals, getMetaFields } from './services/api';
+import { map_operator } from './data';
 
 const useStyles = makeStyles((theme) => ({
   Container: {
-    display: "flex",
+    display: 'flex',
   },
   rulesGroupHeader: {
-    display: "flex",
+    display: 'flex',
   },
   paper: {
     margin: theme.spacing(1),
     padding: theme.spacing(3, 2),
   },
   rules: {
-    display: "flex",
+    display: 'flex',
   },
   MuiAutocompleteRoot: {
-    width: "100%",
-    marginRight: "10px",
+    width: '100%',
+    marginRight: '10px',
   },
   title: {
     flexGrow: 1,
@@ -35,7 +34,7 @@ const useStyles = makeStyles((theme) => ({
   disabled: {
     pointerEvents: 'none',
     opacity: 0.5,
-  }
+  },
 }));
 
 let id = 0;
@@ -44,17 +43,17 @@ const defaultRules = [
   {
     id,
     parentId: -1,
-    combinator: "and",
+    combinator: 'and',
     rules: [{}],
   },
 ];
 
 function QueryBuilder() {
   const [metaModals, setMetaModals] = React.useState();
-  const [metaFields, setMetaFields] = React.useState([]);
-  const [type, setType] = React.useState("select");
+  const [metaFields, setMetaFields] = React.useState();
+  const [type] = React.useState('select');
   const [rules, setRules] = React.useState(defaultRules);
-  const [query, setQuery] = React.useState("");
+  const [query, setQuery] = React.useState('');
   const classes = useStyles();
   const fields = metaModals && metaModals.metaFields.map((f) => f.name);
 
@@ -68,7 +67,7 @@ function QueryBuilder() {
       produce((draft) => {
         const index = rules.findIndex((r) => r.id === id);
         draft.splice(index, 1);
-      })
+      }),
     );
   }
 
@@ -77,7 +76,7 @@ function QueryBuilder() {
       produce((draft) => {
         const editorIndex = rules.findIndex((i) => i.id === editorId);
         draft[editorIndex].rules = [...draft[editorIndex].rules, rule];
-      })
+      }),
     );
   }
 
@@ -86,7 +85,7 @@ function QueryBuilder() {
       produce((draft) => {
         const editorIndex = rules.findIndex((i) => i.id === editorId);
         draft[editorIndex].rules.splice(index, 1);
-      })
+      }),
     );
   }
 
@@ -99,65 +98,61 @@ function QueryBuilder() {
       produce((draft) => {
         const editorIndex = rules.findIndex((i) => i.id === editor.id);
         if (index >= 0) {
-          draft[editorIndex].rules[index] = {
-            ...draft[editorIndex].rules[index],
-            [name]: value,
-          };
+          Object.assign(
+            (draft[editorIndex].rules[index] = {
+              ...draft[editorIndex].rules[index],
+              [name]: value,
+              ...(name === 'fieldName' ? { operator: '', fieldValue: '', fieldValue2: '' } : {}),
+              ...(name === 'operator' ? { fieldValue: '', fieldValue2: '' } : {}),
+            }),
+          );
         } else {
           draft[editorIndex][name] = value;
         }
-      })
+      }),
     );
   }
 
   function getCondition(rules) {
     return rules.map((rule) => {
-      const { fieldName, operator } = rule;
+      const { fieldName, field, operator } = rule;
       if (!fieldName) {
         return null;
       }
-      const name = fieldName && fieldName.name;
       let { fieldValue, fieldValue2 } = rule;
-      const type = fieldName && fieldName.type.toLowerCase();
-      const isNumber = ["long", "integer", "decimal", "boolean"].includes(type);
-      const isRelational = [
-        "one_to_one",
-        "many_to_one",
-        "many_to_many",
-        "one_to_many",
-      ].includes(type);
+      const type = field.type.toLowerCase();
+      const isNumber = ['long', 'integer', 'decimal', 'boolean'].includes(type);
+      const isRelational = ['one_to_one', 'many_to_one', 'many_to_many', 'one_to_many'].includes(
+        type,
+      );
 
       if (isRelational) {
-        if (["in", "notIn"].includes(operator)) {
+        if (['in', 'notIn'].includes(operator)) {
           const value = fieldValue.map((v) => v.id);
-          return `${name}.id ${map_operator[operator]} (${value})`;
-        } else if (["isNotNull", "isNull"].includes(operator)) {
-          return `${"self." + name + "." + fieldName.targetName} ${
-            map_operator[operator]
-          }`;
+          return `${'self.' + fieldName.split('.')[0]}.id ${map_operator[operator]} (${value})`;
+        } else if (['isNotNull', 'isNull'].includes(operator)) {
+          return `${'self.' + fieldName + '.' + fieldName.targetName} ${map_operator[operator]}`;
         } else {
-          return `${"self." + name + "." + fieldName.targetName} ${
+          return `${'self.' + fieldName + '.' + fieldName.targetName} ${
             map_operator[operator]
           } "${fieldValue}"`;
         }
       }
 
       if (!isNumber) {
-        fieldValue = `"${fieldValue}"`;
-        fieldValue2 = `"${fieldValue2}"`;
+        fieldValue = `'${fieldValue}'`;
+        fieldValue2 = `'${fieldValue2}'`;
       }
 
-      if (["between", "notBetween"].includes(operator)) {
-        return `${"self." + name} ${
-          map_operator[operator]
-        } ${fieldValue} and ${fieldValue2}`;
-      } else if (["isNotNull", "isNull"].includes(operator)) {
-        return `${"self." + name} ${map_operator[operator]}`;
-      } else if (["isTrue", "isFalse"].includes(operator)) {
-        const value = operator === "isTrue" ? true : false;
-        return `${"self." + name} = ${value}`;
+      if (['between', 'notBetween'].includes(operator)) {
+        return `${'self.' + fieldName} ${map_operator[operator]} ${fieldValue} and ${fieldValue2}`;
+      } else if (['isNotNull', 'isNull'].includes(operator)) {
+        return `${'self.' + fieldName} ${map_operator[operator]}`;
+      } else if (['isTrue', 'isFalse'].includes(operator)) {
+        const value = operator === 'isTrue' ? true : false;
+        return `${'self.' + fieldName} = ${value}`;
       } else {
-        return `${"self." + name} ${map_operator[operator]} ${fieldValue}`;
+        return `${'self.' + fieldName} ${map_operator[operator]} ${fieldValue}`;
       }
     });
   }
@@ -170,9 +165,9 @@ function QueryBuilder() {
       condition.push(conditions);
     }
     if (isChildren) {
-      return " (" + condition.join(" " + combinator.toUpperCase() + " ") + ") ";
+      return ' (' + condition.join(' ' + combinator.toUpperCase() + ' ') + ') ';
     } else {
-      return condition.join(" " + combinator.toUpperCase() + " ");
+      return condition.join(' ' + combinator.toUpperCase() + ' ');
     }
   }
 
@@ -196,18 +191,17 @@ function QueryBuilder() {
   }
 
   function generateQuery() {
-    let str = "";
+    let str = '';
 
     const getSelectedFields = (metaFields) => {
-      const fields = metaFields.map((f) => "self." + f.name);
-      return fields.join(",");
+      const fields = metaFields.split(',').map((f) => 'self.' + f);
+      return fields.join(',');
     };
 
     const listOfTree = getListOfTree(rules);
     const criteria = getCriteria(listOfTree);
     const model = metaModals && metaModals.name;
-    const selectedFields =
-      metaFields && metaFields.length > 0 ? getSelectedFields(metaFields) : "*";
+    const selectedFields = metaFields ? getSelectedFields(metaFields) : '*';
 
     if (metaModals) {
       str += `${type.toUpperCase()} ${selectedFields} FROM ${model} self `;
@@ -215,7 +209,7 @@ function QueryBuilder() {
         str += `WHERE ${criteria}`;
       }
     } else {
-      return "Invalid query";
+      return 'Invalid query';
     }
     return str;
   }
@@ -230,16 +224,7 @@ function QueryBuilder() {
         </Toolbar>
       </AppBar>
       <Paper variant="outlined" className={classes.paper}>
-        <Select
-          name="type"
-          title="Query Type"
-          value={type}
-          onChange={setType}
-          options={queryType}
-        />
-      </Paper>
-      <Paper variant="outlined" className={classes.paper}>
-        <div style={{ display: "flex", width: "100%" }}>
+        <div style={{ display: 'flex', width: '100%' }}>
           <Selection
             name="metaModal"
             title="Meta Modal"
@@ -248,25 +233,20 @@ function QueryBuilder() {
             optionLabelKey="name"
             onChange={(e) => {
               setMetaModals(e);
-              setMetaFields([]);
+              setMetaFields('');
               setRules(defaultRules);
             }}
             value={metaModals}
-            classes={{ root: classes.MuiAutocompleteRoot, }}
+            classes={{ root: classes.MuiAutocompleteRoot }}
           />
-          <Selection
+
+          <InputField
             name="metaField"
             title="Meta Field"
             placeholder="meta field"
-            fetchAPI={() =>
-              getMetaFields(fields, metaModals && metaModals.fullName)
-            }
-            optionLabelKey="name"
             onChange={setMetaFields}
             value={metaFields}
-            isMulti={true}
-            style={{pointerEvent: 'none'}}
-            classes={{ root: classNames(classes.MuiAutocompleteRoot,(!Boolean(metaModals) && classes.disabled)) }}
+            disabled={!Boolean(metaModals)}
           />
         </div>
       </Paper>
@@ -282,9 +262,7 @@ function QueryBuilder() {
                 onAddRule={onAddRule}
                 onRemoveRule={onRemoveRule}
                 getChildEditors={getChildEditors}
-                getMetaFields={() =>
-                  getMetaFields(fields, metaModals && metaModals.fullName)
-                }
+                getMetaFields={() => getMetaFields(fields, metaModals && metaModals.fullName)}
                 onChange={(e, editor, index) => onChange(e, editor, index)}
                 editor={editor}
                 isDisable={!Boolean(metaModals)}
@@ -294,10 +272,7 @@ function QueryBuilder() {
           );
         })}
 
-      <Button
-        title="Generate Query"
-        onClick={() => setQuery(generateQuery())}
-      />
+      <Button title="Generate Query" onClick={() => setQuery(generateQuery())} />
       <InputLabel color="secondary">{query}</InputLabel>
     </div>
   );
