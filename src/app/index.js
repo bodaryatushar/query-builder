@@ -130,7 +130,7 @@ function QueryBuilder() {
       if (isRelational) {
         if (["in", "notIn"].includes(operator)) {
           const value = fieldValue.map((v) => v.id);
-          return `${name}.id ${map_operator[operator]} [${value}]`;
+          return `${name}.id ${map_operator[operator]} (${value})`;
         } else if (["isNotNull", "isNull"].includes(operator)) {
           return `${"self." + name + "." + fieldName.targetName} ${
             map_operator[operator]
@@ -217,7 +217,7 @@ function QueryBuilder() {
     } else {
       return "Invalid query";
     }
-    return str + ";";
+    return str;
   }
 
   return (
