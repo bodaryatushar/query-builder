@@ -25,13 +25,4 @@ Run following commands from terminal:<br/>
   $ yarn start
 </pre>
 
-### `yarn test`
-
-Run following commands from terminal:<br/>
-
-<pre>
-  $ yarn test or
-  $ yarn test --coverage
-</pre>
-
 
