@@ -2,6 +2,7 @@ import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import { Selection } from './component';
 import { getSubMetaField } from './services/api';
+import classnames from 'classnames';
 
 const useStyles = makeStyles((theme) => ({
   MuiAutocompleteRoot: {
@@ -10,7 +11,14 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function FieldEditor({ initValue = '', getMetaFields, editor, onChange, value }) {
+export default function FieldEditor({
+  initValue = '',
+  getMetaFields,
+  editor,
+  onChange,
+  value,
+  classNames,
+}) {
   const [fields, setFields] = React.useState([]);
   const classes = useStyles();
 
@@ -49,7 +57,7 @@ export default function FieldEditor({ initValue = '', getMetaFields, editor, onC
         optionLabelKey="name"
         onChange={(value) => handleChange(value)}
         value={transformValue}
-        classes={{ root: classes.MuiAutocompleteRoot }}
+        classes={{ root: classnames(classes.MuiAutocompleteRoot, classNames && classNames.root) }}
       />
       {hasManyValues && relationModel && (
         <FieldEditor
@@ -58,6 +66,7 @@ export default function FieldEditor({ initValue = '', getMetaFields, editor, onC
           initValue={`${initValue}${startValue}.`}
           value={values.slice(1).join('.')}
           onChange={onChange}
+          classNames={classNames}
         />
       )}
     </React.Fragment>
